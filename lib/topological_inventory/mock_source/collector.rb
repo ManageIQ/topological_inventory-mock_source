@@ -5,14 +5,15 @@ require "topological_inventory/mock_source/logging"
 require "topological_inventory/mock_source/parser"
 require "topological_inventory/mock_source/server"
 require "topological_inventory/mock_source/storage"
+require "yaml"
 
 module TopologicalInventory
   module MockSource
     class Collector < TopologicalInventoryIngressApiClient::Collector
       include Logging
 
-      def initialize(source, config, amounts)
-        initialize_config(config, amounts)
+      def initialize(source, config, amounts, configmap = nil)
+        initialize_config(config, amounts, configmap)
 
         super(source,
               :default_limit => (::Settings.default_limit || 100).to_i,
@@ -193,7 +194,13 @@ module TopologicalInventory
         :unused
       end
 
-      def initialize_config(settings_config, amounts_config)
+      def initialize_config(settings_config, amounts_config, configmap)
+        load_config_from_files(settings_config, amounts_config)
+        load_config_from_string(configmap) if configmap.present?
+      end
+
+      # Load settings from config and amounts config files
+      def load_config_from_files(settings_config = 'default', amounts_config = 'default')
         settings_file = File.join(path_to_defaults_config, "#{sanitize_filename(settings_config)}.yml")
         amounts_file  = File.join(path_to_amounts_config, "#{sanitize_filename(amounts_config)}.yml")
 
@@ -203,9 +210,23 @@ module TopologicalInventory
         ::Config.load_and_set_settings(settings_file, amounts_file)
       end
 
+      # Load default configs from file and replace with user-defined YAML
+      #
+      # @param configmap [String] string in YAML format
+      def load_config_from_string(configmap)
+        hash = YAML.load(configmap)
+
+        ::Settings.add_source!(hash)
+        ::Settings.reload!
+
+      rescue => err
+        logger.error(err)
+        raise err
+      end
+
       def sanitize_filename(filename)
         # Remove any character that aren't 0-9, A-Z, or a-z, / or -
-        filename.gsub(/[^0-9A-Z\/\-]/i, '_')
+        filename.to_s.gsub(/[^0-9A-Z\/\-]/i, '_')
       end
     end
   end
