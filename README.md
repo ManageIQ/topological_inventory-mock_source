@@ -34,7 +34,7 @@ start collector:
 - openshift/default (in case of running `bin/mock-collector`)
 - amazon/default (in case of running `bin/mock-collector`)
 - ...
-@param `configmap` (`ENV["ENDPOINT_CONFIG"]`) [optional] - YAML config in string format
+@param `source_settings` (`ENV["SOURCE_SETTINGS"]`) [optional] - YAML config in string format
     Replaces `config` and `amounts` settings by this settings.   
     Can contain only part of settings
     
@@ -45,7 +45,7 @@ bin/openshift-mock-collector --source=31b5338b-685d-4056-ba39-d00b4d7f19cc --con
 bin/amazon-mock-collector --source=592ba27a-2b89-11e9-b210-d663bd873d93 --amounts=large
 
 or 
-export ENDPOINT_CONFIG=$(cat config/amounts/large.yml)
+export SOURCE_SETTINGS=$(cat config/amounts/large.yml)
 bin/mock-collector --source=31b5338b-685d-4056-ba39-d00b4d7f19cc
 ```    
 _Note: Source is manager for this provider (like ExtManagementSystem in ManageIQ)_
